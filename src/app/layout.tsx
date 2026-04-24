@@ -3,6 +3,7 @@ import { Playfair_Display, DM_Sans, DM_Mono } from "next/font/google";
 import "./globals.css";
 import { LanguageProvider } from "@/lib/language";
 import { SessionProvider } from "next-auth/react";
+import NearDearGuide from "@/components/NearDearGuide";
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -26,6 +27,19 @@ export const metadata: Metadata = {
   title: "NearDear — Someone near. Someone dear.",
   description:
     "Find a verified NearDear companion for your parents or loved ones. India's human-presence marketplace.",
+  icons: {
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+    ],
+    apple: '/favicon.svg',
+  },
+  openGraph: {
+    title: "NearDear — Someone near. Someone dear.",
+    description: "Find a verified NearDear companion for your parents or loved ones. India's human-presence marketplace.",
+    siteName: "NearDear",
+    locale: "en_IN",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
@@ -40,6 +54,7 @@ export default function RootLayout({
       >
         <SessionProvider>
           <LanguageProvider>{children}</LanguageProvider>
+          <NearDearGuide />
         </SessionProvider>
       </body>
     </html>

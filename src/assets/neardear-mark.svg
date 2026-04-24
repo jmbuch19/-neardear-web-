@@ -1,0 +1,10 @@
+<!-- NearDear mark — three overlapping circles, normalized to 176×169 viewBox -->
+<svg width="176" height="169" viewBox="0 0 176 169" xmlns="http://www.w3.org/2000/svg" aria-label="NearDear">
+  <!-- Normalized from original: shifted by (-56, -38) so mark fills the viewBox -->
+  <!-- Circle 1: Family/Receiver — Saffron -->
+  <circle cx="62" cy="107" r="62" fill="#E07B2F" opacity="0.82"/>
+  <!-- Circle 2: Companion — Teal -->
+  <circle cx="114" cy="107" r="62" fill="#1A6B7A" opacity="0.82"/>
+  <!-- Circle 3: Platform — Sage Green -->
+  <circle cx="88" cy="62" r="62" fill="#4A8C6F" opacity="0.82"/>
+</svg>

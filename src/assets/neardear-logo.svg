@@ -1,0 +1,40 @@
+<svg width="680" height="320" viewBox="0 0 680 320" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .wordmark-near { font-family: Georgia, serif; font-size: 52px; font-weight: 700; fill: #1C2B3A; }
+      .wordmark-dear { font-family: Georgia, serif; font-size: 52px; font-weight: 700; fill: #E07B2F; }
+      .tagline { font-family: Georgia, serif; font-size: 15px; fill: #6B7280; letter-spacing: 2px; }
+      .sub { font-family: Arial, sans-serif; font-size: 12px; fill: #9CA3AF; font-style: italic; letter-spacing: 0.5px; }
+      .role-label { font-family: Arial, sans-serif; font-size: 10px; fill: #6B7280; }
+    </style>
+  </defs>
+
+  <!-- Background: Warm Cream -->
+  <rect width="680" height="320" fill="#FEF8F0"/>
+
+  <!-- Three overlapping circles — the NearDear mark -->
+  <circle cx="118" cy="145" r="62" fill="#E07B2F" opacity="0.82"/>
+  <circle cx="170" cy="145" r="62" fill="#1A6B7A" opacity="0.82"/>
+  <circle cx="144" cy="100" r="62" fill="#4A8C6F" opacity="0.82"/>
+
+  <!-- Wordmark -->
+  <text x="260" y="125" class="wordmark-near">Near</text>
+  <text x="390" y="125" class="wordmark-dear">Dear</text>
+
+  <!-- Divider line under wordmark -->
+  <line x1="260" y1="138" x2="540" y2="138" stroke="#E8E0D8" stroke-width="1"/>
+
+  <!-- Primary tagline -->
+  <text x="260" y="168" class="tagline">SOMEONE NEAR.  SOMEONE DEAR.</text>
+
+  <!-- Secondary line -->
+  <text x="260" y="196" class="sub">"The neighbour who used to check in — reimagined."</text>
+
+  <!-- Role labels under circles -->
+  <text x="100" y="224" text-anchor="middle" class="role-label">Family</text>
+  <text x="170" y="224" text-anchor="middle" class="role-label">Companion</text>
+  <text x="144" y="235" text-anchor="middle" class="role-label">Platform</text>
+
+  <!-- Domain -->
+  <text x="260" y="240" font-family="Arial, sans-serif" font-size="11" fill="#9CA3AF" letter-spacing="1">neardear.in</text>
+</svg>

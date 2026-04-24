@@ -330,6 +330,10 @@ model User {
   updatedAt         DateTime      @updatedAt
   lastLoginAt         DateTime?
   preferredLanguage   AppLanguage   @default(EN)
+  deletedAt           DateTime?
+  anonymisedAt        DateTime?
+  deletionRequestedAt DateTime?
+  deletionReason      String?
 
   // Relations
   otpTokens         OtpToken[]
@@ -353,15 +357,16 @@ model User {
 // ─── OTP TOKENS ───────────────────────────────────────
 
 model OtpToken {
-  id          String   @id @default(cuid())
-  userId      String
-  token       String
-  phone       String
-  expiresAt   DateTime
-  usedAt      DateTime?
-  createdAt   DateTime @default(now())
+  id             String    @id @default(cuid())
+  userId         String
+  token          String
+  phone          String
+  expiresAt      DateTime
+  usedAt         DateTime?
+  failedAttempts Int       @default(0)
+  createdAt      DateTime  @default(now())
 
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([phone])
   @@index([token])
@@ -402,6 +407,7 @@ model ElderProfile {
 
   createdAt           DateTime         @default(now())
   updatedAt           DateTime         @updatedAt
+  deletedAt           DateTime?
 
   familyUser          User      @relation(fields: [familyUserId], references: [id])
   requests            Request[]
@@ -538,6 +544,8 @@ model ProviderProfile {
   createdAt           DateTime        @default(now())
   updatedAt           DateTime        @updatedAt
   preferredLanguage   AppLanguage     @default(EN)
+  deletedAt           DateTime?
+  anonymisedAt        DateTime?
 
   // Relations
   user                User            @relation(fields: [userId], references: [id])
@@ -1353,6 +1361,7 @@ model SosRequest {
   city                String    @default("Ahmedabad")
   status              String    @default("SEARCHING")
   // SEARCHING / COMPANION_FOUND / ADMIN_ALERTED / RESOLVED / FALLBACK
+  pollToken           String?   @unique
   assignedCompanionId String?
   companionNotifiedAt DateTime?
   adminAlertedAt      DateTime?
@@ -1829,4 +1838,26 @@ model PlanPayment {
   @@index([carePlanId])
   @@index([dueDate])
   @@map("plan_payments")
+}
+
+// ─── GDPR / DATA DELETION ─────────────────────────────
+
+model DataDeletionRequest {
+  id              String    @id @default(cuid())
+  userId          String
+  requestType     String
+  // ACCOUNT_DELETE / ELDER_DELETE /
+  // NOTIFICATION_CLEAR / DATA_EXPORT
+  status          String    @default("PENDING")
+  // PENDING / PROCESSING / COMPLETED
+  requestedAt     DateTime  @default(now())
+  processedAt     DateTime?
+  scheduledFor    DateTime?
+  // 30 days after request for anonymisation
+  notes           String?
+
+  @@index([userId])
+  @@index([status])
+  @@index([scheduledFor])
+  @@map("data_deletion_requests")
 }

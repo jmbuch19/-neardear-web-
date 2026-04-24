@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Script from 'next/script'
 import Link from 'next/link'
+import NearDearLogo from '@/components/NearDearLogo'
 
 interface OrderData {
   orderId: string
@@ -17,28 +18,7 @@ interface OrderData {
   companionEarnings: number
 }
 
-declare global {
-  interface Window {
-    Razorpay: new (options: RazorpayOptions) => RazorpayInstance
-  }
-}
-
-interface RazorpayOptions {
-  key: string
-  amount: number
-  currency: string
-  name: string
-  description: string
-  order_id: string
-  theme: { color: string }
-  prefill?: { name?: string; contact?: string }
-  handler: (response: { razorpay_payment_id: string; razorpay_signature: string }) => void
-  modal: { ondismiss: () => void }
-}
-
-interface RazorpayInstance {
-  open: () => void
-}
+// RazorpayOptions, RazorpayInstance, and Window.Razorpay declared in src/types/razorpay.d.ts
 
 export default function PaymentPage() {
   const { id: sessionId } = useParams<{ id: string }>()
@@ -135,17 +115,8 @@ export default function PaymentPage() {
 
           {/* Header */}
           <div style={{ marginBottom: 32 }}>
-            <Link
-              href="/"
-              style={{
-                fontFamily: 'Playfair Display, Georgia, serif',
-                fontSize: 22,
-                fontWeight: 700,
-                color: '#E07B2F',
-                textDecoration: 'none',
-              }}
-            >
-              NearDear
+            <Link href="/" aria-label="NearDear home" style={{ textDecoration: 'none', display: 'inline-block' }}>
+              <NearDearLogo width={140} variant="compact" />
             </Link>
           </div>
 

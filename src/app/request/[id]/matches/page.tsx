@@ -560,6 +560,32 @@ export default function MatchesPage() {
           />
         ))}
 
+        {/* Care plan banner — below all cards */}
+        <div style={{
+          background: '#FFFFFF', borderRadius: 16,
+          border: '1px solid #E8E0D8', padding: '16px 20px',
+          marginBottom: 16, marginTop: 4,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+          flexWrap: 'wrap',
+        }}>
+          <p style={{ fontSize: 14, color: '#6B7280', margin: 0, lineHeight: 1.5 }}>
+            Need regular visits?{' '}
+            <strong style={{ color: '#1C2B3A' }}>Care plans save up to 25%.</strong>
+          </p>
+          <a
+            href={serviceInfo
+              ? `/care-plan/new?serviceId=${serviceInfo.id}`
+              : '/care-plan/new'}
+            style={{
+              color: '#E07B2F', fontWeight: 600, fontSize: 14,
+              textDecoration: 'none', whiteSpace: 'nowrap' as const,
+              flexShrink: 0,
+            }}
+          >
+            Compare plan options →
+          </a>
+        </div>
+
         {/* Collapsible extra matches */}
         {extraMatches.length > 0 && (
           <div style={{ marginTop: 8 }}>

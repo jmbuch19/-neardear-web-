@@ -36,7 +36,12 @@ export async function POST(req: NextRequest) {
     .update(`${razorpayOrderId}|${razorpayPaymentId}`)
     .digest('hex')
 
-  if (expectedSignature !== razorpaySignature) {
+  const expectedBuffer = Buffer.from(expectedSignature)
+  const providedBuffer = Buffer.from(razorpaySignature)
+  const signaturesMatch =
+    expectedBuffer.length === providedBuffer.length &&
+    crypto.timingSafeEqual(expectedBuffer, providedBuffer)
+  if (!signaturesMatch) {
     return NextResponse.json({ error: 'Invalid payment signature' }, { status: 400 })
   }
 
@@ -47,6 +52,16 @@ export async function POST(req: NextRequest) {
 
   if (payment.userId !== session.user.id) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  // Enforce that the submitted order ID matches what we created for this session
+  if (payment.razorpayOrderId !== razorpayOrderId) {
+    return NextResponse.json({ error: 'Order ID mismatch' }, { status: 400 })
+  }
+
+  // Idempotency guard: reject if already captured to prevent double-processing
+  if (payment.status === 'CAPTURED') {
+    return NextResponse.json({ error: 'Payment already captured' }, { status: 409 })
   }
 
   const dbSession = await prisma.session.findUnique({

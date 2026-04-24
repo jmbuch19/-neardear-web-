@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+const MAX_ATTEMPTS = 5
+
 export async function POST(req: NextRequest) {
   let body: unknown
   try {
@@ -26,17 +28,35 @@ export async function POST(req: NextRequest) {
   // Strip +91 prefix if present
   const phone = rawPhone.replace(/^\+91/, '').replace(/\s/g, '')
 
-  // Find a valid, unused, non-expired OTP token
-  const tokenRecord = await prisma.otpToken.findFirst({
-    where: {
-      phone,
-      token: otp,
-      expiresAt: { gt: new Date() },
-      usedAt: null,
-    },
+  // Find the most recent active (non-expired, non-used) OTP for this phone.
+  // We look up by phone first (not token) so we can check the DB-backed
+  // attempt counter before revealing whether the token matched.
+  const activeToken = await prisma.otpToken.findFirst({
+    where: { phone, expiresAt: { gt: new Date() }, usedAt: null },
+    orderBy: { createdAt: 'desc' },
   })
 
-  if (!tokenRecord) {
+  if (!activeToken) {
+    return NextResponse.json(
+      { error: 'Invalid or expired OTP' },
+      { status: 401 }
+    )
+  }
+
+  // Durable throttle: max 5 failed attempts per OTP token (persists across cold starts)
+  if (activeToken.failedAttempts >= MAX_ATTEMPTS) {
+    return NextResponse.json(
+      { error: 'Too many attempts. Please request a new OTP.' },
+      { status: 429 }
+    )
+  }
+
+  // Verify token value
+  if (activeToken.token !== otp) {
+    await prisma.otpToken.update({
+      where: { id: activeToken.id },
+      data: { failedAttempts: { increment: 1 } },
+    })
     return NextResponse.json(
       { error: 'Invalid or expired OTP' },
       { status: 401 }
@@ -45,7 +65,7 @@ export async function POST(req: NextRequest) {
 
   // Mark token as used
   await prisma.otpToken.update({
-    where: { id: tokenRecord.id },
+    where: { id: activeToken.id },
     data: { usedAt: new Date() },
   })
 

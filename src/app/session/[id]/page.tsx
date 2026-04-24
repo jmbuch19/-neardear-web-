@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import NearDearLogo from '@/components/NearDearLogo'
 
 function getInitials(name: string): string {
   const parts = name.trim().split(/\s+/)
@@ -90,17 +91,8 @@ export default async function SessionPage({
 
         {/* Header */}
         <div style={{ marginBottom: 32 }}>
-          <Link
-            href="/"
-            style={{
-              fontFamily: 'Playfair Display, Georgia, serif',
-              fontSize: 22,
-              fontWeight: 700,
-              color: '#E07B2F',
-              textDecoration: 'none',
-            }}
-          >
-            NearDear
+          <Link href="/" aria-label="NearDear home" style={{ textDecoration: 'none', display: 'inline-block' }}>
+            <NearDearLogo width={140} variant="compact" />
           </Link>
         </div>
 

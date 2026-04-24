@@ -6,6 +6,7 @@ import { useState } from "react";
 import { usePathname } from "next/navigation";
 import LanguageToggle from "@/components/LanguageToggle";
 import { useLanguage } from "@/lib/language";
+import NearDearLogo from "@/components/NearDearLogo";
 
 const NAV = [
   { href: "/why-neardear", en: "Why NearDear", gu: "નિયરડિયર શા માટે" },
@@ -23,11 +24,8 @@ export default function Header() {
     <header className="sticky top-0 z-50 bg-white border-b border-[#E8E0D8]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
         {/* Brand */}
-        <Link
-          href="/"
-          className="font-[family-name:var(--font-playfair)] text-2xl font-bold text-[#E07B2F] tracking-tight shrink-0"
-        >
-          NearDear
+        <Link href="/" className="shrink-0" aria-label="NearDear home">
+          <NearDearLogo width={140} variant="compact" />
         </Link>
 
         {/* Desktop nav */}

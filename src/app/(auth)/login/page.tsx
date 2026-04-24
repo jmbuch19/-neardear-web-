@@ -5,6 +5,7 @@ import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import LanguageToggle from '@/components/LanguageToggle'
 import { useLanguage } from '@/lib/language'
+import NearDearLogo from '@/components/NearDearLogo'
 
 const copy = {
   EN: {
@@ -153,16 +154,8 @@ export default function LoginPage() {
       </div>
 
       {/* Brand */}
-      <div className="text-center mb-8">
-        <h1
-          className="text-4xl font-bold tracking-tight"
-          style={{ color: '#E07B2F', fontFamily: 'Georgia, serif' }}
-        >
-          {t.brand}
-        </h1>
-        <p className="mt-2 text-base" style={{ color: '#1A6B7A' }}>
-          {t.tagline}
-        </p>
+      <div className="flex flex-col items-center mb-8">
+        <NearDearLogo width={200} variant="full" />
       </div>
 
       {/* Card */}

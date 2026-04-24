@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import LanguageToggle from '@/components/LanguageToggle'
+import NearDearLogo from '@/components/NearDearLogo'
 import WhoNeedsHelp from './steps/WhoNeedsHelp'
 import ElderProfile from './steps/ElderProfile'
 import WhatNeeded from './steps/WhatNeeded'
@@ -78,12 +79,7 @@ export default function NewRequestPage() {
         className="sticky top-0 z-10 flex items-center justify-between px-5 py-3"
         style={{ background: '#FEF8F0', borderBottom: '1px solid #E8E0D8' }}
       >
-        <span
-          className="font-[family-name:var(--font-playfair)] font-bold text-[#1C2B3A]"
-          style={{ fontSize: 22 }}
-        >
-          NearDear
-        </span>
+        <NearDearLogo width={120} variant="compact" />
         <LanguageToggle />
       </header>
 

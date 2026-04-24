@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import crypto from 'crypto'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
@@ -30,6 +31,10 @@ export async function POST(req: NextRequest) {
   const session = await auth()
   const userId = session?.user?.id ?? null
 
+  // For anonymous SOS (no authenticated user), generate a one-time poll token
+  // so only the creator can check status without guessing IDs.
+  const pollToken = userId ? null : crypto.randomBytes(32).toString('hex')
+
   // Create the SosRequest
   const sosRequest = await prisma.sosRequest.create({
     data: {
@@ -39,6 +44,7 @@ export async function POST(req: NextRequest) {
       city: 'Ahmedabad',
       status: 'SEARCHING',
       userId,
+      pollToken,
     },
   })
 
@@ -108,5 +114,10 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  return NextResponse.json({ sosId: sosRequest.id })
+  return NextResponse.json({
+    sosId: sosRequest.id,
+    // pollToken is only present for anonymous SOS — clients must persist it
+    // to call /api/sos/[id]/status for status polling.
+    ...(pollToken ? { pollToken } : {}),
+  })
 }

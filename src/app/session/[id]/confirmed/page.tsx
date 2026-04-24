@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import CancelSessionModal from '@/components/CancelSessionModal'
 import { calculatePlan } from '@/lib/carePlan'
+import NearDearLogo from '@/components/NearDearLogo'
 
 function getInitials(name: string): string {
   const parts = name.trim().split(/\s+/)
@@ -81,17 +82,8 @@ export default async function SessionConfirmedPage({
 
         {/* Header */}
         <div style={{ marginBottom: 32 }}>
-          <Link
-            href="/"
-            style={{
-              fontFamily: 'Playfair Display, Georgia, serif',
-              fontSize: 22,
-              fontWeight: 700,
-              color: '#E07B2F',
-              textDecoration: 'none',
-            }}
-          >
-            NearDear
+          <Link href="/" aria-label="NearDear home" style={{ textDecoration: 'none', display: 'inline-block' }}>
+            <NearDearLogo width={140} variant="compact" />
           </Link>
         </div>
 
@@ -235,7 +227,8 @@ export default async function SessionConfirmedPage({
         {/* Care plan nudge — shown if user has had prior sessions with this service */}
         {priorSessionCount >= 1 && firstService && (() => {
           const exampleCalc = calculatePlan(firstService.suggestedFeeMin, 'TWICE_WEEKLY', 'THREE_MONTHS', 'MONTHLY')
-          const planUrl = `/care-plan/create?serviceId=${firstService.id}&serviceName=${encodeURIComponent(firstService.name)}&companionId=${companion.id}&companionName=${encodeURIComponent(companion.legalName)}&pricePerVisit=${firstService.suggestedFeeMin}`
+          const planUrl = `/care-plan/new?serviceId=${firstService.id}&companionId=${companion.id}&elderProfileId=`
+          const freeVisitsEquiv = Math.round(exampleCalc.totalSavings / firstService.suggestedFeeMin)
           return (
             <div
               style={{
@@ -253,15 +246,34 @@ export default async function SessionConfirmedPage({
                 Care plan available
               </p>
               <p style={{ fontSize: 15, fontWeight: 600, color: '#1C2B3A', marginBottom: 4 }}>
-                You&apos;ve used this service {priorSessionCount + 1} time{priorSessionCount + 1 !== 1 ? 's' : ''}.
+                You&apos;ve visited {priorSessionCount + 1} time{priorSessionCount + 1 !== 1 ? 's' : ''} — lock in a lower rate.
               </p>
-              <p style={{ fontSize: 14, color: '#6B7280', marginBottom: 14, lineHeight: 1.5 }}>
-                A care plan could save you{' '}
+              <p style={{ fontSize: 14, color: '#6B7280', marginBottom: 10, lineHeight: 1.5 }}>
+                A care plan (twice a week, 3 months) with {firstName} could save you{' '}
                 <strong style={{ color: '#4A8C6F' }}>
                   ₹{exampleCalc.totalSavings.toLocaleString('en-IN')}
                 </strong>
-                {' '}over 3 months with {firstName}.
+                {' '}— that&apos;s about{' '}
+                <strong style={{ color: '#4A8C6F' }}>{freeVisitsEquiv} free visits</strong>.
               </p>
+              {/* Mini price comparison */}
+              <div style={{
+                background: '#FFFFFF', borderRadius: 10,
+                border: '1px solid #E8E0D8', padding: '10px 14px', marginBottom: 14,
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <span style={{ fontSize: 13, color: '#9CA3AF' }}>Regular ({exampleCalc.totalSessions} visits)</span>
+                  <span style={{ fontSize: 13, color: '#9CA3AF', fontFamily: 'DM Mono, monospace', textDecoration: 'line-through' }}>
+                    ₹{exampleCalc.totalRegularPrice.toLocaleString('en-IN')}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: '#1C2B3A' }}>Plan price ({exampleCalc.totalDiscountPercent}% off)</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#1C2B3A', fontFamily: 'DM Mono, monospace' }}>
+                    ₹{exampleCalc.totalPlanPrice.toLocaleString('en-IN')}
+                  </span>
+                </div>
+              </div>
               <Link
                 href={planUrl}
                 style={{
