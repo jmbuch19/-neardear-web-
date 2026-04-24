@@ -1,0 +1,27 @@
+{
+  "name": "NearDear — Someone near. Someone dear.",
+  "short_name": "NearDear",
+  "description": "Find a verified NearDear companion for your parents or loved ones. India's human-presence marketplace.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#0a5c3e",
+  "lang": "en-IN",
+  "categories": ["lifestyle", "health", "social"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Playfair_Display, DM_Sans, DM_Mono } from "next/font/google";
 import "./globals.css";
 import { LanguageProvider } from "@/lib/language";
@@ -27,6 +27,12 @@ export const metadata: Metadata = {
   title: "NearDear — Someone near. Someone dear.",
   description:
     "Find a verified NearDear companion for your parents or loved ones. India's human-presence marketplace.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "NearDear",
+  },
   icons: {
     icon: [
       { url: '/favicon.svg', type: 'image/svg+xml' },
@@ -40,6 +46,14 @@ export const metadata: Metadata = {
     locale: "en_IN",
     type: "website",
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0a5c3e",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({
