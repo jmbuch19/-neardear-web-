@@ -24,6 +24,14 @@ export default function NearDearGuide() {
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
+    function openFromEvent() {
+      setOpen(true)
+    }
+    window.addEventListener('open-neardear-guide', openFromEvent)
+    return () => window.removeEventListener('open-neardear-guide', openFromEvent)
+  }, [])
+
+  useEffect(() => {
     if (open && !hasGreeted) {
       setMessages([
         {
