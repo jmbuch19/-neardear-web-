@@ -32,6 +32,13 @@ const withPWA = withPWAInit({
 });
 
 /** @type {import('next').NextConfig} */
-const nextConfig = {};
+const nextConfig = {
+  async redirects() {
+    return [
+      { source: "/apply", destination: "/provider/apply", permanent: true },
+      { source: "/join", destination: "/provider/apply", permanent: true },
+    ];
+  },
+};
 
 export default withPWA(nextConfig);
