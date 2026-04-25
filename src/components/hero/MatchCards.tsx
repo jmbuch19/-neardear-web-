@@ -267,7 +267,7 @@ export default function MatchCards() {
 
         <div className="text-center">
           <Link
-            href="/companions"
+            href="/services"
             className="inline-block bg-[#E07B2F] text-white rounded-xl px-8 py-4 text-base font-semibold hover:opacity-90 transition-opacity shadow-sm"
           >
             {copy.cta}
