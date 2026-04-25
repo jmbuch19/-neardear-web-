@@ -37,6 +37,7 @@ const nextConfig = {
     return [
       { source: "/apply", destination: "/provider/apply", permanent: true },
       { source: "/join", destination: "/provider/apply", permanent: true },
+      { source: "/become-companion", destination: "/provider/apply", permanent: true },
     ];
   },
 };
