@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
+import { randomUUID } from 'node:crypto'
 import { auth } from '@/lib/auth'
 
 const ALLOWED_TYPES = ['selfie', 'address_proof', 'pcc'] as const
@@ -31,11 +32,13 @@ function getS3Client(): S3Client {
   })
 }
 
+// Application uploads (selfie, address proof, PCC) happen before the applicant
+// has an OTP session, so we allow these types unauthenticated. Authenticated
+// uploads keep the user's id in the key for traceability.
+const APPLICATION_TYPES = new Set<UploadType>(['selfie', 'address_proof', 'pcc'])
+
 export async function GET(req: NextRequest) {
   const session = await auth()
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
 
   const { searchParams } = new URL(req.url)
   const rawType = searchParams.get('type')
@@ -48,6 +51,11 @@ export async function GET(req: NextRequest) {
   }
 
   const uploadType = rawType as UploadType
+
+  if (!session?.user?.id && !APPLICATION_TYPES.has(uploadType)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   const bucketName = process.env.R2_BUCKET_NAME
   const publicBaseUrl = process.env.R2_PUBLIC_URL
 
@@ -56,8 +64,8 @@ export async function GET(req: NextRequest) {
   }
 
   const timestamp = Date.now()
-  const userId = session.user.id
-  const key = `${uploadType}/${userId}/${timestamp}`
+  const ownerSegment = session?.user?.id ?? `applicant-${randomUUID()}`
+  const key = `${uploadType}/${ownerSegment}/${timestamp}`
 
   try {
     const client = getS3Client()
