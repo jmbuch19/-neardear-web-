@@ -318,7 +318,6 @@ model User {
   state             String?
   role              Role          @default(RECEIVER)
   accountStatus     AccountStatus @default(ACTIVE)
-  passwordHash      String?
   isPhoneVerified   Boolean       @default(false)
   isEmailVerified   Boolean       @default(false)
   consentTerms      Boolean       @default(false)
