@@ -10,6 +10,7 @@ import NearDearLogo from "@/components/NearDearLogo";
 
 const NAV = [
   { href: "/why-neardear", en: "Why NearDear", gu: "નિયરડિયર શા માટે" },
+  { href: "/safety", en: "Safety", gu: "સુરક્ષા" },
   { href: "/faq", en: "FAQ", gu: "FAQ" },
   { href: "/about", en: "About", gu: "વિશે" },
 ];
