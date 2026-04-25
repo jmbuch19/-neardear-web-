@@ -78,6 +78,21 @@ export default function IdentityVerification({ data, setData, onNext }: Props) {
     }
   }, [stopCamera])
 
+  // Attach the stream to the <video> element after it mounts and start playback.
+  // Setting srcObject inside startCamera() races with the React render that
+  // actually creates the <video>, so videoRef.current was often null.
+  useEffect(() => {
+    const video = videoRef.current
+    if (!cameraStream || !video) return
+    if (video.srcObject !== cameraStream) {
+      video.srcObject = cameraStream
+    }
+    video.play().catch(() => {
+      // Autoplay can be blocked until the user interacts; the visible Take Photo
+      // button will still trigger frames to appear.
+    })
+  }, [cameraStream])
+
   async function uploadSelfieBlob(blob: Blob, contentType: string) {
     setUploading((prev) => ({ ...prev, selfie: true }))
     try {
@@ -131,9 +146,8 @@ export default function IdentityVerification({ data, setData, onNext }: Props) {
         },
       })
       setCameraStream(stream)
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream
-      }
+      // Stream attaches to <video> via the useEffect below — by the time React
+      // re-renders with cameraStream set, videoRef.current is the real DOM node.
     } catch (err: unknown) {
       console.error('Camera error:', err)
       const name = err instanceof Error ? err.name : ''
