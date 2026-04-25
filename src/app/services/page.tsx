@@ -29,7 +29,8 @@ async function fetchServices() {
         minTrustLevel: true,
       },
     });
-  } catch {
+  } catch (err) {
+    console.error("[/services] fetchServices failed", err);
     return [];
   }
 }
