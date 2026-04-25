@@ -61,6 +61,8 @@ const nextConfig = {
       { source: "/verification", destination: "/safety", permanent: true },
       { source: "/for-families", destination: "/request/new", permanent: true },
       { source: "/for-companions", destination: "/provider/apply", permanent: true },
+      { source: "/book", destination: "/request/new", permanent: true },
+      { source: "/book/:path*", destination: "/request/new/:path*", permanent: true },
     ];
   },
 };

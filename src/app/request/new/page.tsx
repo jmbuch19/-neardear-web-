@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import LanguageToggle from '@/components/LanguageToggle'
 import NearDearLogo from '@/components/NearDearLogo'
 import WhoNeedsHelp from './steps/WhoNeedsHelp'
@@ -29,12 +30,51 @@ function getTotalSteps(flowData: FlowData): number {
 }
 
 export default function NewRequestPage() {
+  return (
+    <Suspense
+      fallback={<div className="min-h-screen" style={{ background: '#FEF8F0' }} />}
+    >
+      <NewRequestFlow />
+    </Suspense>
+  )
+}
+
+function NewRequestFlow() {
+  const searchParams = useSearchParams()
   const [step, setStep] = useState<Step>('WHO')
   const [flowData, setFlowDataState] = useState<FlowData>(DEFAULT_FLOW_DATA)
 
   function setFlowData(update: Partial<FlowData>) {
     setFlowDataState((prev) => ({ ...prev, ...update }))
   }
+
+  useEffect(() => {
+    if (searchParams.get('recurring') === 'true') {
+      setFlowDataState((prev) => ({
+        ...prev,
+        timingType: 'RECURRING',
+        isRecurring: true,
+      }))
+    }
+
+    const serviceSlug = searchParams.get('service')
+    if (serviceSlug) {
+      fetch('/api/services')
+        .then((r) => r.json())
+        .then((services: Array<{ id: string; slug: string }>) => {
+          const match = services.find((s) => s.slug === serviceSlug)
+          if (match) {
+            setFlowDataState((prev) => ({
+              ...prev,
+              selectedServiceIds: prev.selectedServiceIds.includes(match.id)
+                ? prev.selectedServiceIds
+                : [...prev.selectedServiceIds, match.id],
+            }))
+          }
+        })
+        .catch(() => {})
+    }
+  }, [searchParams])
 
   function onNext() {
     const steps = getStepList(flowData)
