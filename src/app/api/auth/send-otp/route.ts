@@ -72,8 +72,10 @@ export async function POST(req: NextRequest) {
     },
   })
 
-  // Send OTP via MSG91 dedicated OTP API (no DLT template required)
-  if (!process.env.MSG91_API_KEY) {
+  // Send OTP via MSG91 dedicated OTP API.
+  // If either the API key or the template ID is missing, fall back to logging
+  // the OTP so the team can still sign in while DLT approval is pending.
+  if (!process.env.MSG91_API_KEY || !process.env.MSG91_OTP_TEMPLATE_ID) {
     console.log(`[SMS MOCK OTP] Phone: ${phone} OTP: ${otp}`)
   } else {
     try {
