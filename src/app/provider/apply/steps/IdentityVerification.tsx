@@ -374,6 +374,7 @@ export default function IdentityVerification({ data, setData, onNext }: Props) {
                 ref={selfieFileInputRef}
                 type="file"
                 accept="image/jpeg,image/png"
+                capture="user"
                 className="hidden"
                 onChange={(e) => {
                   const f = e.target.files?.[0]
