@@ -57,11 +57,13 @@ export default function IdentityVerification({ data, setData, onNext }: Props) {
   const [aadhaarMasked, setAadhaarMasked] = useState(true)
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null)
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(data.selfieUrl || null)
-  const [cameraError, setCameraError] = useState(false)
+  const [cameraError, setCameraError] = useState<string | null>(null)
+  const [useFallback, setUseFallback] = useState(false)
   const [uploading, setUploading] = useState<Record<string, boolean>>({})
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const addressProofInputRef = useRef<HTMLInputElement>(null)
+  const selfieFileInputRef = useRef<HTMLInputElement>(null)
 
   const stopCamera = useCallback(() => {
     if (cameraStream) {
@@ -76,16 +78,76 @@ export default function IdentityVerification({ data, setData, onNext }: Props) {
     }
   }, [stopCamera])
 
-  async function startCamera() {
+  async function uploadSelfieBlob(blob: Blob, contentType: string) {
+    setUploading((prev) => ({ ...prev, selfie: true }))
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } })
+      const res = await fetch('/api/upload/signed-url?type=selfie')
+      const { uploadUrl, publicUrl } = (await res.json()) as {
+        uploadUrl: string
+        publicUrl: string
+      }
+      await fetch(uploadUrl, {
+        method: 'PUT',
+        body: blob,
+        headers: { 'Content-Type': contentType },
+      })
+      setCapturedPhoto(publicUrl)
+      setData({ selfieUrl: publicUrl })
+    } catch {
+      const dataUrl = await new Promise<string>((resolve) => {
+        const reader = new FileReader()
+        reader.onloadend = () => resolve(typeof reader.result === 'string' ? reader.result : '')
+        reader.readAsDataURL(blob)
+      })
+      setCapturedPhoto(dataUrl)
+      setData({ selfieUrl: dataUrl })
+    } finally {
+      setUploading((prev) => ({ ...prev, selfie: false }))
+    }
+  }
+
+  async function startCamera() {
+    setCameraError(null)
+    setUseFallback(false)
+
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+      setUseFallback(true)
+      return
+    }
+
+    const isSecure =
+      window.location.protocol === 'https:' || window.location.hostname === 'localhost'
+    if (!isSecure) {
+      setUseFallback(true)
+      return
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          width: { ideal: 640 },
+          height: { ideal: 480 },
+          facingMode: 'user',
+        },
+      })
       setCameraStream(stream)
-      setCameraError(false)
       if (videoRef.current) {
         videoRef.current.srcObject = stream
       }
-    } catch {
-      setCameraError(true)
+    } catch (err: unknown) {
+      console.error('Camera error:', err)
+      const name = err instanceof Error ? err.name : ''
+      if (name === 'NotAllowedError') {
+        setCameraError(
+          'Camera permission denied. Please allow camera access in your browser settings and try again.',
+        )
+        setUseFallback(true)
+      } else if (name === 'NotFoundError') {
+        setCameraError('No camera found on this device. Please upload a photo instead.')
+        setUseFallback(true)
+      } else {
+        setUseFallback(true)
+      }
     }
   }
 
@@ -99,29 +161,28 @@ export default function IdentityVerification({ data, setData, onNext }: Props) {
     if (!ctx) return
     ctx.drawImage(video, 0, 0)
 
-    canvas.toBlob(async (blob) => {
-      if (!blob) return
-      stopCamera()
-      setUploading((prev) => ({ ...prev, selfie: true }))
-      try {
-        const res = await fetch('/api/upload/signed-url?type=selfie')
-        const { uploadUrl, publicUrl } = await res.json() as { uploadUrl: string; publicUrl: string }
-        await fetch(uploadUrl, {
-          method: 'PUT',
-          body: blob,
-          headers: { 'Content-Type': 'image/jpeg' },
-        })
-        setCapturedPhoto(publicUrl)
-        setData({ selfieUrl: publicUrl })
-      } catch {
-        // fallback — use data URL
-        const dataUrl = canvas.toDataURL('image/jpeg')
-        setCapturedPhoto(dataUrl)
-        setData({ selfieUrl: dataUrl })
-      } finally {
-        setUploading((prev) => ({ ...prev, selfie: false }))
-      }
-    }, 'image/jpeg', 0.9)
+    canvas.toBlob(
+      async (blob) => {
+        if (!blob) return
+        stopCamera()
+        await uploadSelfieBlob(blob, 'image/jpeg')
+      },
+      'image/jpeg',
+      0.9,
+    )
+  }
+
+  async function handleSelfieFile(file: File) {
+    if (!file.type.startsWith('image/')) {
+      setErrors((prev) => ({ ...prev, selfieUrl: 'Please upload a JPG or PNG image' }))
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setErrors((prev) => ({ ...prev, selfieUrl: 'Photo must be under 5MB' }))
+      return
+    }
+    setErrors((prev) => ({ ...prev, selfieUrl: undefined }))
+    await uploadSelfieBlob(file, file.type)
   }
 
   async function uploadAddressProof(file: File) {
@@ -290,43 +351,66 @@ export default function IdentityVerification({ data, setData, onNext }: Props) {
                 {uploading.selfie ? 'Uploading...' : 'Take Photo Now'}
               </button>
             </div>
-          ) : cameraError ? (
-            <div className="space-y-3">
-              {process.env.NODE_ENV === 'development' ? (
-                <>
-                  <div
-                    className="rounded-xl p-3 text-sm"
-                    style={{ background: '#FFF8E7', border: '1px solid #F0B429', color: '#92600A' }}
-                  >
-                    📷 Camera blocked in development. Using file upload instead. Camera will work normally in production.
-                  </div>
-                  <label className="block text-sm font-medium text-[#1C2B3A]">
-                    Upload a clear photo of your face
-                    <span className="block text-xs font-normal text-[#6B7280] mt-0.5">
-                      (camera not available in this browser — upload a photo instead)
-                    </span>
-                  </label>
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/png"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0]
-                      if (!file) return
-                      const url = URL.createObjectURL(file)
-                      setCapturedPhoto(url)
-                      setData({ selfieUrl: url })
-                    }}
-                    className="w-full text-sm text-[#6B7280]"
-                  />
-                </>
-              ) : (
-                <div
-                  className="rounded-xl p-3 text-sm text-[#E85D4A]"
-                  style={{ background: '#FFF5F4', border: '1px solid #E85D4A' }}
+          ) : useFallback ? (
+            <div className="space-y-4">
+              <div
+                className="rounded-xl p-4"
+                style={{ background: '#FFF8E7', border: '1px solid #F0B429' }}
+              >
+                <p className="text-sm font-semibold text-[#92600A] mb-1">
+                  📷 Camera not available
+                </p>
+                {cameraError ? (
+                  <p className="text-xs text-[#92600A]">{cameraError}</p>
+                ) : (
+                  <p className="text-xs text-[#92600A]">
+                    Your browser blocked camera access. Please either grant access or upload a
+                    photo below.
+                  </p>
+                )}
+              </div>
+
+              <input
+                ref={selfieFileInputRef}
+                type="file"
+                accept="image/jpeg,image/png"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0]
+                  if (f) handleSelfieFile(f)
+                }}
+              />
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUseFallback(false)
+                    setCameraError(null)
+                    startCamera()
+                  }}
+                  className="rounded-xl py-2.5 text-sm font-semibold text-[#4A8C6F] transition-opacity"
+                  style={{ border: '1.5px solid #4A8C6F' }}
                 >
-                  Camera access is required. Please allow camera access in your browser settings and try again.
-                </div>
-              )}
+                  Try camera again
+                </button>
+                <button
+                  type="button"
+                  onClick={() => selfieFileInputRef.current?.click()}
+                  disabled={uploading.selfie}
+                  className="rounded-xl py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+                  style={{ background: '#4A8C6F' }}
+                >
+                  {uploading.selfie ? 'Uploading…' : 'Upload photo'}
+                </button>
+              </div>
+
+              <ul className="space-y-1 text-xs text-[#6B7280] mt-1">
+                <li>✓ Clear and well-lit</li>
+                <li>✓ Face clearly visible</li>
+                <li>✓ Taken today</li>
+                <li className="text-[#E85D4A]">✗ Not from a previous photo</li>
+              </ul>
             </div>
           ) : (
             <div className="space-y-3">

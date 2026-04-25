@@ -65,6 +65,14 @@ const nextConfig = {
       { source: "/book/:path*", destination: "/request/new/:path*", permanent: true },
     ];
   },
+  async headers() {
+    return [
+      {
+        source: "/provider/apply/:path*",
+        headers: [{ key: "Permissions-Policy", value: "camera=self" }],
+      },
+    ];
+  },
 };
 
 export default withPWA(nextConfig);
