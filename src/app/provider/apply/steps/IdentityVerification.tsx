@@ -18,6 +18,40 @@ const YEARS_OPTIONS = [
   { value: '5y_plus', label: '5+ years' },
 ]
 
+// Verhoeff checksum — standard Aadhaar validation
+const VERHOEFF_D = [
+  [0,1,2,3,4,5,6,7,8,9],
+  [1,2,3,4,0,6,7,8,9,5],
+  [2,3,4,0,1,7,8,9,5,6],
+  [3,4,0,1,2,8,9,5,6,7],
+  [4,0,1,2,3,9,5,6,7,8],
+  [5,9,8,7,6,0,4,3,2,1],
+  [6,5,9,8,7,1,0,4,3,2],
+  [7,6,5,9,8,2,1,0,4,3],
+  [8,7,6,5,9,3,2,1,0,4],
+  [9,8,7,6,5,4,3,2,1,0],
+]
+const VERHOEFF_P = [
+  [0,1,2,3,4,5,6,7,8,9],
+  [1,5,7,6,2,8,3,0,9,4],
+  [5,8,0,3,7,9,6,1,4,2],
+  [8,9,1,6,0,4,3,5,2,7],
+  [9,4,5,3,1,2,6,8,7,0],
+  [4,2,8,6,5,7,3,9,0,1],
+  [2,7,9,3,8,0,6,4,1,5],
+  [7,0,4,6,9,1,3,2,5,8],
+]
+
+function validateAadhaar(number: string): boolean {
+  if (!/^\d{12}$/.test(number)) return false
+  let c = 0
+  const reversed = number.split('').reverse()
+  for (let i = 0; i < reversed.length; i++) {
+    c = VERHOEFF_D[c][VERHOEFF_P[i % 8][parseInt(reversed[i], 10)]]
+  }
+  return c === 0
+}
+
 export default function IdentityVerification({ data, setData, onNext }: Props) {
   const [errors, setErrors] = useState<Partial<Record<string, string>>>({})
   const [aadhaarMasked, setAadhaarMasked] = useState(true)
@@ -115,8 +149,13 @@ export default function IdentityVerification({ data, setData, onNext }: Props) {
 
   function validate(): boolean {
     const e: Partial<Record<string, string>> = {}
+    if (!data.legalName.trim())
+      e.legalName = 'Please enter your full name as it appears on your Aadhaar card'
     if (!data.aadhaarNumber || !/^\d{12}$/.test(data.aadhaarNumber))
       e.aadhaarNumber = 'Aadhaar number must be exactly 12 digits'
+    else if (!validateAadhaar(data.aadhaarNumber))
+      e.aadhaarNumber =
+        'This does not appear to be a valid Aadhaar number. Please check and try again.'
     if (!capturedPhoto && !data.selfieUrl)
       e.selfieUrl = 'Please take a live selfie'
     if (!data.addressLine1.trim())
@@ -150,8 +189,28 @@ export default function IdentityVerification({ data, setData, onNext }: Props) {
         </p>
       </div>
 
-      {/* Aadhaar */}
+      {/* Name + Aadhaar */}
       <div className="bg-white rounded-2xl p-5 space-y-4" style={{ border: '1px solid #E8E0D8' }}>
+        <div>
+          <label className="block text-sm font-semibold text-[#1C2B3A] mb-1">
+            Legal full name (as on Aadhaar) <span className="text-[#E85D4A]">*</span>
+          </label>
+          <input
+            type="text"
+            value={data.legalName}
+            onChange={(e) => setData({ legalName: e.target.value })}
+            placeholder="Full name"
+            className="w-full rounded-xl px-4 py-3 text-[#1C2B3A] text-sm outline-none focus:ring-2 focus:ring-[#4A8C6F]"
+            style={{ border: errors.legalName ? '1.5px solid #E85D4A' : '1.5px solid #E8E0D8' }}
+          />
+          <p className="text-xs text-[#9CA3AF] mt-1">
+            Enter your name exactly as it appears on your Aadhaar card.
+          </p>
+          {errors.legalName && (
+            <p className="text-xs text-[#E85D4A] mt-1">{errors.legalName}</p>
+          )}
+        </div>
+
         <div>
           <label className="block text-sm font-semibold text-[#1C2B3A] mb-1">
             Aadhaar number <span className="text-[#E85D4A]">*</span>
@@ -172,8 +231,12 @@ export default function IdentityVerification({ data, setData, onNext }: Props) {
               style={{ border: errors.aadhaarNumber ? '1.5px solid #E85D4A' : '1.5px solid #E8E0D8' }}
             />
           </div>
-          <p className="text-xs text-[#9CA3AF] mt-1">We verify through the government system. Only last 4 digits stored by us.</p>
-          {errors.aadhaarNumber && <p className="text-xs text-[#E85D4A] mt-1">{errors.aadhaarNumber}</p>}
+          <p className="text-xs text-[#9CA3AF] mt-1">
+            We verify through the government system. Only last 4 digits stored by us.
+          </p>
+          {errors.aadhaarNumber && (
+            <p className="text-xs text-[#E85D4A] mt-1">{errors.aadhaarNumber}</p>
+          )}
         </div>
       </div>
 
