@@ -38,8 +38,11 @@ const nextConfig = {
       { source: "/apply", destination: "/provider/apply", permanent: true },
       { source: "/join", destination: "/provider/apply", permanent: true },
       { source: "/become-companion", destination: "/provider/apply", permanent: true },
+      { source: "/trust", destination: "/safety", permanent: true },
       { source: "/how-it-works", destination: "/safety", permanent: true },
       { source: "/verification", destination: "/safety", permanent: true },
+      { source: "/for-families", destination: "/request/new", permanent: true },
+      { source: "/for-companions", destination: "/provider/apply", permanent: true },
     ];
   },
 };
