@@ -33,6 +33,9 @@ export const metadata: Metadata = {
     statusBarStyle: "default",
     title: "NearDear",
   },
+  other: {
+    "mobile-web-app-capable": "yes",
+  },
   icons: {
     icon: [
       { url: '/favicon.svg', type: 'image/svg+xml' },

@@ -15,6 +15,24 @@ const withPWA = withPWAInit({
         handler: "NetworkOnly",
       },
       {
+        urlPattern: ({ request }) => request.mode === "navigate",
+        handler: "NetworkFirst",
+        options: {
+          cacheName: "html-pages",
+          networkTimeoutSeconds: 5,
+          expiration: { maxEntries: 32, maxAgeSeconds: 24 * 60 * 60 },
+        },
+      },
+      {
+        urlPattern: /\/_next\/data\/.*/i,
+        handler: "NetworkFirst",
+        options: {
+          cacheName: "next-data",
+          networkTimeoutSeconds: 5,
+          expiration: { maxEntries: 64, maxAgeSeconds: 24 * 60 * 60 },
+        },
+      },
+      {
         urlPattern: /\/_next\/static\/.*/i,
         handler: "StaleWhileRevalidate",
         options: { cacheName: "next-static" },
