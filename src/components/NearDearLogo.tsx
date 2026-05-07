@@ -49,10 +49,9 @@ export default function NearDearLogo({
 
   // ── Compact: mark (scaled to height 48) + wordmark side by side ───────────────
   // Mark height 48 → scale = 48/169 = 0.284 → mark width = 176×0.284 = 50
-  // Wordmark fontSize 38 → "NearDear" ≈ 150px wide
-  // ViewBox: 210 × 48
+  // Wordmark fontSize 36 Georgia bold → "Dear" ends ≈ x=245, so vw must clear that.
   if (variant === 'compact') {
-    const vw = 215, vh = 52
+    const vw = 260, vh = 52
     const h = Math.round((width * vh) / vw)
     const s = vh / 169  // scale factor for mark
     const r = Math.round(62 * s)
