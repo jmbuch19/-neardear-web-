@@ -213,6 +213,7 @@ export default function CompanionApplyPage() {
             setData={setData}
             onSubmitted={onSubmitted}
             onBack={onBack}
+            session={session}
           />
         )}
         {step === 'SUBMITTED' && (

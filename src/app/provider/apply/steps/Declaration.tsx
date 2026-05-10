@@ -1,6 +1,8 @@
 'use client'
 
 import { useState } from 'react'
+import { signIn } from 'next-auth/react'
+import type { Session } from 'next-auth'
 import type { ApplicationData } from '../types'
 
 interface Props {
@@ -8,6 +10,7 @@ interface Props {
   setData: (update: Partial<ApplicationData>) => void
   onSubmitted: (applicationId: string) => void
   onBack: () => void
+  session: Session | null
 }
 
 const HARD_RULES = [
@@ -33,10 +36,18 @@ const CONSENTS: {
   { key: 'consentVerification', label: 'I consent to NearDear verifying my identity and background' },
 ]
 
-export default function Declaration({ data, setData, onSubmitted }: Props) {
+export default function Declaration({ data, setData, onSubmitted, session }: Props) {
   const [errors, setErrors] = useState<Partial<Record<string, string>>>({})
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
+
+  // Phone OTP sub-flow — applicants typically arrive without a session,
+  // and the apply API requires an authenticated user. We bind the application
+  // to the phone they entered in Step 1 by sending an OTP and signing them in.
+  const phoneAuthed = !!session?.user?.phone && session.user.phone === data.phone
+  const [otpSent, setOtpSent] = useState(false)
+  const [otp, setOtp] = useState('')
+  const [sendingOtp, setSendingOtp] = useState(false)
 
   const signatureMatches = data.digitalSignature.trim().toLowerCase() === data.legalName.trim().toLowerCase()
 
@@ -56,22 +67,72 @@ export default function Declaration({ data, setData, onSubmitted }: Props) {
     return Object.keys(e).length === 0
   }
 
-  async function handleSubmit() {
+  async function postApplication() {
+    const res = await fetch('/api/provider/apply', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    })
+    if (!res.ok) {
+      const body = await res.json() as { error?: string }
+      throw new Error(body.error ?? 'Submission failed')
+    }
+    const result = await res.json() as { applicationId: string }
+    onSubmitted(result.applicationId)
+  }
+
+  async function handleSendOtp() {
+    setSubmitError('')
+    if (!validate()) return
+    setSendingOtp(true)
+    try {
+      const res = await fetch('/api/auth/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: data.phone }),
+      })
+      const body = await res.json() as { error?: string }
+      if (!res.ok) {
+        throw new Error(body.error ?? 'Could not send OTP. Please try again.')
+      }
+      setOtpSent(true)
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : 'Could not send OTP. Please try again.')
+    } finally {
+      setSendingOtp(false)
+    }
+  }
+
+  async function handleVerifyAndSubmit() {
+    setSubmitError('')
+    if (!/^\d{6}$/.test(otp)) {
+      setSubmitError('Please enter the 6-digit OTP we sent to your phone.')
+      return
+    }
+    setSubmitting(true)
+    try {
+      const result = await signIn('credentials', {
+        phone: data.phone,
+        otp,
+        redirect: false,
+      })
+      if (result?.error) {
+        throw new Error('Invalid or expired OTP. Please try again.')
+      }
+      await postApplication()
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  async function handleSubmitAuthed() {
     if (!validate()) return
     setSubmitting(true)
     setSubmitError('')
     try {
-      const res = await fetch('/api/provider/apply', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      })
-      if (!res.ok) {
-        const body = await res.json() as { error?: string }
-        throw new Error(body.error ?? 'Submission failed')
-      }
-      const result = await res.json() as { applicationId: string }
-      onSubmitted(result.applicationId)
+      await postApplication()
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
     } finally {
@@ -175,6 +236,54 @@ export default function Declaration({ data, setData, onSubmitted }: Props) {
         </div>
       </div>
 
+      {/* Phone verification — required so the application binds to a real, OTP-verified phone */}
+      {!phoneAuthed && (
+        <div className="bg-white rounded-2xl p-5 space-y-3" style={{ border: '1px solid #E8E0D8' }}>
+          <div>
+            <h3 className="text-sm font-semibold text-[#1A6B7A] mb-1">Verify your phone</h3>
+            <p className="text-xs text-[#6B7280]">
+              We&apos;ll send a 6-digit code to <span className="font-[family-name:var(--font-dm-mono)] text-[#1C2B3A]">+91 {data.phone || '...'}</span> to confirm it&apos;s yours.
+            </p>
+          </div>
+
+          {!otpSent ? (
+            <button
+              type="button"
+              onClick={handleSendOtp}
+              disabled={sendingOtp || !data.phone}
+              className="w-full rounded-xl py-3 font-semibold text-sm transition-opacity hover:opacity-90 disabled:opacity-60"
+              style={{ background: '#FFF5EC', color: '#E07B2F', border: '1.5px solid #E07B2F' }}
+            >
+              {sendingOtp ? 'Sending OTP…' : 'Send verification code'}
+            </button>
+          ) : (
+            <div className="space-y-2">
+              <label className="block text-xs font-semibold text-[#1C2B3A]">Enter 6-digit code</label>
+              <input
+                type="tel"
+                inputMode="numeric"
+                maxLength={6}
+                value={otp}
+                onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                placeholder="______"
+                className="w-full rounded-xl px-4 py-3 text-center text-xl tracking-[0.5em] outline-none focus:ring-2 focus:ring-[#4A8C6F]"
+                style={{ border: '1.5px solid #E8E0D8', color: '#1C2B3A' }}
+                autoFocus
+              />
+              <button
+                type="button"
+                onClick={handleSendOtp}
+                disabled={sendingOtp}
+                className="text-xs font-semibold disabled:opacity-50"
+                style={{ color: '#E07B2F' }}
+              >
+                {sendingOtp ? 'Resending…' : 'Resend code'}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       {submitError && (
         <div
           className="rounded-xl p-3 text-sm text-[#E85D4A]"
@@ -185,12 +294,18 @@ export default function Declaration({ data, setData, onSubmitted }: Props) {
       )}
 
       <button
-        onClick={handleSubmit}
-        disabled={submitting}
+        onClick={phoneAuthed ? handleSubmitAuthed : handleVerifyAndSubmit}
+        disabled={submitting || (!phoneAuthed && !otpSent)}
         className="w-full rounded-xl py-4 text-white font-semibold text-base transition-opacity hover:opacity-90 disabled:opacity-60"
         style={{ background: '#4A8C6F' }}
       >
-        {submitting ? 'Submitting...' : 'Submit My Application'}
+        {submitting
+          ? 'Submitting...'
+          : phoneAuthed
+            ? 'Submit My Application'
+            : otpSent
+              ? 'Verify & Submit My Application'
+              : 'Submit My Application'}
       </button>
     </div>
   )
